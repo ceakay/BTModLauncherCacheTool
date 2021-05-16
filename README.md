@@ -6,11 +6,15 @@ The tool will scan your computer for a git portable extract (../git-core/git.exe
 
 If tool reports errors, screenshot and file a ticket on RT discord - https://discord.gg/roguetech. 
 
+# Additional Parameters
+- -GITPath: Specify path to git.exe (Containing DIR or exact file)
+- -SettingsPath: Specify path to RtlLauncherSettings.xml (Containing DIR or exact file) This is for QA/Testing team, users should not ever need this.
+
 # Warnings
-1. Only have ONE copy of git-portable (../git-core/git.exe)
+1. Only have ONE copy of git-portable (../git-core/git.exe). Use parameters to target git.exe location if you already have git installed. 
 2. Only have ONE RT Launcher. Having more than one copy has been known to break RT, so this tool is designed around that.
 
 # Requirements
 1. Make sure you read the warnings
-2. Download and extract portable git to anywhere. https://github.com/git-for-windows/git/releases/
-3. Download and run latest tool release. https://github.com/ceakay/BTModLauncherCacheTool/releases 
+2. Download and extract portable git to anywhere. https://github.com/git-for-windows/git/releases/latest
+3. Download and run latest tool release. https://github.com/ceakay/BTModLauncherCacheTool/releases/latest
