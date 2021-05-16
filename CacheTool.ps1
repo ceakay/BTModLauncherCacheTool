@@ -15,7 +15,8 @@ if (!$GITPath) {
     }
     $GitSearch = $GitSearch | ? {$_.Directory.BaseName -eq 'git-core'}
 } else {
-    $GitSearch += Get-ChildItem -Path $GITPath -Filter "git.exe" -ErrorAction SilentlyContinue
+    $GitSearchTemp = Get-ChildItem -Path $GITPath -Filter "git.exe" -ErrorAction SilentlyContinue
+    $GitSearch += $GitSearchTemp | ? {$_.Name -eq 'git.exe'} #ensure file is correct if specified
 }
 
 #Search for settings xml to get the cache path being used.
@@ -26,7 +27,8 @@ if (!$SettingsPath) {
         $RTLSearch += Get-ChildItem -Path $Drive.Root -Recurse -Filter "RtLauncherSettings.xml" -ErrorAction SilentlyContinue
     }
 } else {
-    $RTLSearch += Get-ChildItem -Path $SettingsPath -Filter "RtLauncherSettings.xml" -ErrorAction SilentlyContinue
+    $RTLSearchTemp = Get-ChildItem -Path $SettingsPath -Filter "RtLauncherSettings.xml" -ErrorAction SilentlyContinue
+    $RTLSearch += $RTLSearchTemp | ? {$_.Name -eq 'RtLauncherSettings.xml'} #ensure file is correct if specified
 }
 
 $StoreDIR = $(pwd).Path
@@ -36,6 +38,43 @@ if ($GitSearch.Count -eq 1 -and $RTLSearch.Count -eq 1) {
     [xml]$RTLXML = Get-Content $($RTLSearch[0].FullName) #load xml
     $CachePath = $RTLXML.RogueTechLauncherSettings.CachePath #get cachepath
     Write-Host "Processing all repos in Cache: $CachePath"
+    $AllGits = @($(Get-ChildItem $CachePath -Recurse -Filter ".git" -Force).Parent.FullName) #find all folders under cache path that are git repo roots
+    $CABXML = New-Object System.Xml.XmlDocument
+    $CABURL = $($($($RTLXML.RogueTechLauncherSettings.CabDataGitRepoUrl -split ("\.git"))[0] -split ("github\.com")) -join ("raw.githubusercontent.com")) + "/master/CabRepos.xml"
+    $CABXML.Load($CABURL) 
+    $CABXML.CabRepoData.Repos.CabRepo | % {$_.name = $_.cacheSubPath; $_.cacheSubPath = "CabCache\"+$_.cacheSubPath}
+    $GitRepoList = @(
+        ([pscustomobject]@{
+            name = "RogueData"
+            cacheSubPath = "RogueData"
+            repoUrl = "https://github.com/wmtorode/RogueLauncherData.git"
+        }),
+        ([pscustomobject]@{
+            name = "RtCache"
+            cacheSubPath = "RtCache"
+            repoUrl = "https://github.com/BattletechModders/RogueTech.git"
+        }),
+        ([pscustomobject]@{
+            name = "CabSupRepoData"
+            cacheSubPath = "CabCahe\CabSupRepoData"
+            repoUrl = "https://github.com/BattletechModders/Community-Asset-Bundle-Data.git"
+        })
+    )
+    $GitRepoList += $CABXML.CabRepoData.Repos.CabRepo
+    $ReposList = $GitRepoList.name
+    $MissingRepoList = @(Compare-Object $ReposList $(Split-Path $AllGits -Leaf))
+    if ($MissingRepoList.Count -gt 0) {
+        Write-Host "Git repos missing. Purging target DIR and scratch installing."
+        foreach ($MissingRepoName in $MissingRepoList.InputObject) {
+            $MissingRepo = $GitRepoList | ? {$_.name -eq $MissingRepoName}
+            Remove-Item -Path $($CachePath+$MissingRepo.cacheSubPath) -Recurse -Force -Filter "*" -ErrorAction SilentlyContinue
+            cd $(Split-Path $($CachePath+$MissingRepo.cacheSubPath))
+            Write-Host "Cloning $($MissingRepo.name). This may take a while..."
+            Invoke-Expression "$GitPortable clone $($MissingRepo.repoUrl) $($MissingRepo.name)" 2> $null #git problem. output is written to stderr for some odd reason
+            Write-Host "$($MissingRepo.name) cloned."
+        }
+    }
+    #Reget allgits after cloning done to validate.
     $AllGits = @($(Get-ChildItem $CachePath -Recurse -Filter ".git" -Force).Parent.FullName) #find all folders under cache path that are git repo roots
     foreach ($Repo in $AllGits) {
         cd $Repo #change into repo dir to allow git work
