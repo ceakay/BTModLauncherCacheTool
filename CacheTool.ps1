@@ -2,14 +2,14 @@
 
 #Search for git-core/git.exe - this is to ensure there's a clean git-portable
 $GitSearch = @()
-Write-Progress -Activity "Finding Git Portable"
+Write-Host "Finding Git Portable..."
 foreach ($Drive in $Drives) {
     $GitSearch += Get-ChildItem -Path $Drive.Root -Recurse -Filter "git.exe" -ErrorAction SilentlyContinue
 }
 $GitSearch = $GitSearch | ? {$_.Directory.BaseName -eq 'git-core'}
 
 #Search for settings xml to get the cache path being used.
-Write-Progress -Activity "Finding RT Launcher"
+Write-Host "Finding RT Launcher..."
 $RTLSearch = @()
 foreach ($Drive in $Drives) {
     $RTLSearch += Get-ChildItem -Path $Drive.Root -Recurse -Filter "RtLauncherSettings.xml" -ErrorAction SilentlyContinue
@@ -21,7 +21,7 @@ if ($GitSearch.Count -eq 1 -and $RTLSearch.Count -eq 1) {
     $GitPortable = $GitSearch[0].FullName #get full path to git-portable git.exe to call
     [xml]$RTLXML = Get-Content $($RTLSearch[0].FullName) #load xml
     $CachePath = $RTLXML.RogueTechLauncherSettings.CachePath #get cachepath
-    Write-Progress -Activity "Processing all repos in Cache: $CachePath"
+    Write-Host "Processing all repos in Cache: $CachePath"
     $AllGits = @($(Get-ChildItem $CachePath -Recurse -Filter ".git" -Force).Parent.FullName) #find all folders under cache path that are git repo roots
     foreach ($Repo in $AllGits) {
         cd $Repo #change into repo dir to allow git work
@@ -38,8 +38,10 @@ if ($GitSearch.Count -eq 1 -and $RTLSearch.Count -eq 1) {
         }
         #Perform final status check on repo and report if working tree is not clean
         $FinalCheck = & $GitPortable Status
-        if (-not !$($FinalCheck | Select-String 'working tree clean')) {
+        if (!$($FinalCheck | Select-String 'working tree clean')) {
             Write-Host "Still some cache errors. Screenshot error into ticket for further instructions`n$Repo`n==================================`n$($FinalCheck -join ("`n"))"
+        } else {
+            Write-Host "$Repo is clean."
         }
     }
 #error cases!
@@ -55,3 +57,4 @@ if ($GitSearch.Count -eq 1 -and $RTLSearch.Count -eq 1) {
 
 #Go back to original working directory
 cd $StoreDIR
+pause
