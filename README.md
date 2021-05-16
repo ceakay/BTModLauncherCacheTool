@@ -24,3 +24,4 @@ Using parameters will work faster, as it skips searching if valid paths are spec
 1. Make sure you read the warnings
 2. Download and extract portable git to anywhere. https://github.com/git-for-windows/git/releases/latest
 3. Download and run latest tool release. https://github.com/ceakay/BTModLauncherCacheTool/releases/latest
+- If you use the exe, you will need to add it to AV exceptions. If you don't trust the exe, you can use the .ps1 script directly (Right-Click > Run with PowerShell). 
