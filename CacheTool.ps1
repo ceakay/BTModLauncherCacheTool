@@ -78,6 +78,8 @@ if ($GitSearch.Count -eq 1 -and $RTLSearch.Count -eq 1) {
     $AllGits = @($(Get-ChildItem $CachePath -Recurse -Filter ".git" -Force).Parent.FullName) #find all folders under cache path that are git repo roots
     foreach ($Repo in $AllGits) {
         cd $Repo #change into repo dir to allow git work
+        Write-Host "Starting on $Repo..."
+        & $GitPortable fsck #verify object packs
         & $GitPortable Restore * #Restore modified and missing files
         #search for extra files and delete them
         $RepoStatus = & $GitPortable Status #get status
