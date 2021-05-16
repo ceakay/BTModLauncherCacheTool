@@ -6,6 +6,7 @@ The tool will scan your computer for a git portable extract (../git-core/git.exe
 - git-clone to pull down missing git repos (no .git found - will purge folder and download from scratch as required by git-clone)
 - git-restore to fix any modified or missing files
 - git-status to generate list of files to delete. 
+
 This is done automatically, and should be used only on advice from support team.
 
 If tool reports errors, screenshot and file a ticket on RT discord - https://discord.gg/roguetech. 
