@@ -16,5 +16,5 @@ If tool reports errors, screenshot and file a ticket on RT discord - https://dis
 
 # Requirements
 1. Make sure you read the warnings
-2. Download and extract portable git to anywhere. https://github.com/git-for-windows/git/releases/
-3. Download and run latest tool release. https://github.com/ceakay/BTModLauncherCacheTool/releases 
+2. Download and extract portable git to anywhere. https://github.com/git-for-windows/git/releases/latest
+3. Download and run latest tool release. https://github.com/ceakay/BTModLauncherCacheTool/releases/latest
