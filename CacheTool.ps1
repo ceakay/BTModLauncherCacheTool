@@ -1,18 +1,32 @@
-﻿$Drives = Get-PSDrive -PSProvider FileSystem #Get all possible drive letters
+﻿param (
+    [string]$GITPath,
+    [string]$SettingsPath
+)
+
+$Drives = Get-PSDrive -PSProvider FileSystem #Get all possible drive letters
 
 #Search for git-core/git.exe - this is to ensure there's a clean git-portable
+#OR search in provided path for git.exe
 $GitSearch = @()
 Write-Host "Finding Git Portable..."
-foreach ($Drive in $Drives) {
-    $GitSearch += Get-ChildItem -Path $Drive.Root -Recurse -Filter "git.exe" -ErrorAction SilentlyContinue
+if (!$GITPath) {
+    foreach ($Drive in $Drives) {
+        $GitSearch += Get-ChildItem -Path $Drive.Root -Recurse -Filter "git.exe" -ErrorAction SilentlyContinue
+    }
+    $GitSearch = $GitSearch | ? {$_.Directory.BaseName -eq 'git-core'}
+} else {
+    $GitSearch += Get-ChildItem -Path $GITPath -Filter "git.exe" -ErrorAction SilentlyContinue
 }
-$GitSearch = $GitSearch | ? {$_.Directory.BaseName -eq 'git-core'}
 
 #Search for settings xml to get the cache path being used.
 Write-Host "Finding RT Launcher..."
 $RTLSearch = @()
-foreach ($Drive in $Drives) {
-    $RTLSearch += Get-ChildItem -Path $Drive.Root -Recurse -Filter "RtLauncherSettings.xml" -ErrorAction SilentlyContinue
+if (!$SettingsPath) {
+    foreach ($Drive in $Drives) {
+        $RTLSearch += Get-ChildItem -Path $Drive.Root -Recurse -Filter "RtLauncherSettings.xml" -ErrorAction SilentlyContinue
+    }
+} else {
+    $RTLSearch += Get-ChildItem -Path $SettingsPath -Filter "RtLauncherSettings.xml" -ErrorAction SilentlyContinue
 }
 
 $StoreDIR = $(pwd).Path
@@ -48,11 +62,11 @@ if ($GitSearch.Count -eq 1 -and $RTLSearch.Count -eq 1) {
 } elseif ($GitSearch.Count -eq 0) {
     Write-Host "Git not found. Please download and extract Git Portable."
 } elseif ($RTLSearch.Count -eq 0) {
-    Write-Host "RT Launcher Settings not found. Have you tried to run the launcher and install yet?"
+    Write-Host "RT Launcher Settings not found. Have you tried to run the launcher yet?"
 } elseif ($GitSearch.Count -gt 1) {
-    Write-Host "Too many instances of git found. You should clean up!"
+    Write-Host "THERE CAN ONLY BE ONE: Too many instances of git.exe found. Ensure -GITPath only contains one instance."
 } elseif ($RTLSearch.Count -gt 1) {
-    Write-Host "Too many instances of RT Launcher settings found. There can only be one!"
+    Write-Host "THERE CAN ONLY BE ONE: Too many instances of RT Launcher Settings XML found. Ensure -SettingsPath only contains one instance."
 }
 
 #Go back to original working directory
