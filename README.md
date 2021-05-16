@@ -2,7 +2,11 @@
 Tool for fixing RT cache, and any other mods that use Launcher/Git.
 
 # How it works
-The tool will scan your computer for a git portable extract (../git-core/git.exe) and your RogueTech Launcher settings XML (This takes a while if you have large drives). Tool will use git-restore to fix any modified or missing files, and use git-status to generate list of files to delete. This is done automatically, and should be used only on advice from support team.
+The tool will scan your computer for a git portable extract (../git-core/git.exe) and your RogueTech Launcher settings XML (This takes a while if you have large drives). Tool will use:
+- git-clone to pull down missing git repos (no .git found - will purge folder and download from scratch as required by git-clone)
+- git-restore to fix any modified or missing files
+- git-status to generate list of files to delete. 
+This is done automatically, and should be used only on advice from support team.
 
 If tool reports errors, screenshot and file a ticket on RT discord - https://discord.gg/roguetech. 
 
