@@ -12,6 +12,7 @@ This is done automatically, and should be used only on advice from support team.
 If tool reports errors, screenshot and file a ticket on RT discord - https://discord.gg/roguetech. 
 
 # Additional Parameters
+Using parameters will work faster, as it skips searching if valid paths are specified.
 - -GITPath: Specify path to git.exe (Containing DIR or exact file)
 - -SettingsPath: Specify path to RtlLauncherSettings.xml (Containing DIR or exact file) This is for QA/Testing team, users should not ever need this.
 
