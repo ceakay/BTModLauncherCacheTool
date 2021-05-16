@@ -16,7 +16,7 @@ If tool reports errors, screenshot and file a ticket on RT discord - https://dis
 
 # Warnings
 1. Only have ONE copy of git-portable (../git-core/git.exe). Use parameters to target git.exe location if you already have git installed. 
-2. Only have ONE RT Launcher. Having more than one copy has been known to break RT, so this tool is designed around that.
+2. Only have ONE RT Launcher and accompanying settings. Having more than one copy has been known to break RT, so this tool is designed around that.
 
 # Requirements
 1. Make sure you read the warnings
