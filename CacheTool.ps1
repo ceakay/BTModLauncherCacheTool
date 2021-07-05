@@ -80,9 +80,9 @@ if ($GitSearch.Count -eq 1 -and $RTLSearch.Count -eq 1) {
         cd $Repo #change into repo dir to allow git work
         Write-Host "Starting on $Repo..."
         & $GitPortable fsck #verify object packs
-        & $GitPortable Restore * #Restore modified and missing files
+        & $GitPortable restore * #Restore modified and missing files
         #search for extra files and delete them
-        $RepoStatus = & $GitPortable Status #get status
+        $RepoStatus = & $GitPortable status #get status
         $UntrackedFilesLineStart = $($RepoStatus | Select-String 'Untracked files:').LineNumber #find start of extra files list
         $UntrackedFilesLineEnd = $($RepoStatus | Select-String 'nothing added to commit').LineNumber #find end of extra files list
         if (-not !$UntrackedFilesLineStart) {
@@ -92,7 +92,7 @@ if ($GitSearch.Count -eq 1 -and $RTLSearch.Count -eq 1) {
             }
         }
         #Perform final status check on repo and report if working tree is not clean
-        $FinalCheck = & $GitPortable Status
+        $FinalCheck = & $GitPortable status
         if (!$($FinalCheck | Select-String 'working tree clean')) {
             Write-Host "Still some cache errors. Screenshot error into ticket for further instructions`n$Repo`n==================================`n$($FinalCheck -join ("`n"))"
         } else {
