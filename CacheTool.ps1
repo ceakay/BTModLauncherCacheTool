@@ -38,6 +38,10 @@ if ($GitSearch.Count -eq 1 -and $RTLSearch.Count -eq 1) {
     [xml]$RTLXML = Get-Content $($RTLSearch[0].FullName) #load xml
     $CachePath = $RTLXML.RogueTechLauncherSettings.CachePath #get cachepath
     Write-Host "Processing all repos in Cache: $CachePath"
+    #Create full path to cachepath if not exist
+    if (-not $(Test-Path $CachePath)) {
+        New-Item -ItemType Directory -Name $(Split-Path $CachePath -Leaf) -Path $(Split-Path $CachePath)
+    }
     $AllGits = @($(Get-ChildItem $CachePath -Recurse -Filter ".git" -Force).Parent.FullName) #find all folders under cache path that are git repo roots
     $CABXML = New-Object System.Xml.XmlDocument
     $CABURL = $($($($RTLXML.RogueTechLauncherSettings.CabDataGitRepoUrl -split ("\.git"))[0] -split ("github\.com")) -join ("raw.githubusercontent.com")) + "/master/CabRepos.xml"
@@ -56,13 +60,21 @@ if ($GitSearch.Count -eq 1 -and $RTLSearch.Count -eq 1) {
         }),
         ([pscustomobject]@{
             name = "CabSupRepoData"
-            cacheSubPath = "CabCahe\CabSupRepoData"
+            cacheSubPath = "CabCache\CabSupRepoData"
             repoUrl = "https://github.com/BattletechModders/Community-Asset-Bundle-Data.git"
         })
     )
     $GitRepoList += $CABXML.CabRepoData.Repos.CabRepo
     $ReposList = $GitRepoList.name
-    $MissingRepoList = @(Compare-Object $ReposList $(Split-Path $AllGits -Leaf))
+    if (!$AllGits) {
+        $MissingRepoList = @(Compare-Object @($ReposList + 1) @(1)) #adding fake data to output formatted data and list all repos as missing
+    } else {
+        $MissingRepoList = @(Compare-Object $ReposList $(Split-Path $AllGits -Leaf))
+    }
+    #Create CabCache folder if not exist
+    if (-not $(Test-Path "$CachePath\CabCache")) {
+        New-Item -ItemType Directory -Name $(Split-Path "$CachePath\CabCache" -Leaf) -Path $(Split-Path "$CachePath\CabCache")
+    }
     if ($MissingRepoList.Count -gt 0) {
         Write-Host "Git repos missing. Purging target DIR and scratch installing."
         foreach ($MissingRepoName in $MissingRepoList.InputObject) {
@@ -70,25 +82,37 @@ if ($GitSearch.Count -eq 1 -and $RTLSearch.Count -eq 1) {
             Remove-Item -Path $($CachePath+$MissingRepo.cacheSubPath) -Recurse -Force -Filter "*" -ErrorAction SilentlyContinue
             cd $(Split-Path $($CachePath+$MissingRepo.cacheSubPath))
             Write-Host "Cloning $($MissingRepo.name). This may take a while..."
-            Invoke-Expression "$GitPortable clone $($MissingRepo.repoUrl) $($MissingRepo.name)" 2> $null #git problem. output is written to stderr for some odd reason
+            Invoke-Expression "$GitPortable clone $($MissingRepo.repoUrl) $($MissingRepo.name)"
             Write-Host "$($MissingRepo.name) cloned."
         }
     }
     #Reget allgits after cloning done to validate.
+    Write-Host "Doing validations..."
     $AllGits = @($(Get-ChildItem $CachePath -Recurse -Filter ".git" -Force).Parent.FullName) #find all folders under cache path that are git repo roots
     foreach ($Repo in $AllGits) {
         cd $Repo #change into repo dir to allow git work
         Write-Host "Starting on $Repo..."
-        & $GitPortable fsck #verify object packs
+        $RepoURL = $(& $GitPortable remote get-url origin) #capture repo's URL
+        $RepoHEAD = $($(& $GitPortable remote show origin | Select-String "HEAD branch") -split (": "))[1]
+        $FSCKErrs = $(& $GitPortable fsck --full 2>&1) #verify object packs, capture errors
+        if ($FSCKErrs -ne $null) {
+            Write-Host $FSCKErrs
+            Write-Host "FSCK errors found. Resetting GIT"
+            Remove-Item .git #purge old git
+            & $GitPortable init #create blank git
+            & $GitPortable remote add origin $RepoURL #relink to repo
+            & $GitPortable fetch #fetch remote
+            & $GitPortable reset --hard HEAD #reset to remote HEAD branch (usually origin/master, but who the fuck knows with github changing shit)
+        }
         & $GitPortable restore * #Restore modified and missing files
-        #search for extra files and delete them
+        #search for extra files/folders and delete them
         $RepoStatus = & $GitPortable status #get status
         $UntrackedFilesLineStart = $($RepoStatus | Select-String 'Untracked files:').LineNumber #find start of extra files list
         $UntrackedFilesLineEnd = $($RepoStatus | Select-String 'nothing added to commit').LineNumber #find end of extra files list
         if (-not !$UntrackedFilesLineStart) {
             $FileList = $RepoStatus[$($UntrackedFilesLineStart + 1)..$($UntrackedFilesLineEnd - 3)] #offset by one because array starts at 0
             foreach ($File in $FileList) {
-                Remove-Item $($Repo+"\"+$File.Trim())#delete each file
+                Remove-Item $($Repo+"\"+$File.Trim()) -Recurse -Force #delete each file
             }
         }
         #Perform final status check on repo and report if working tree is not clean
