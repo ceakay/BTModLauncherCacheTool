@@ -101,9 +101,10 @@ if ($GitSearch.Count -eq 1 -and $RTLSearch.Count -eq 1) {
             Remove-Item .git #purge old git
             & $GitPortable init #create blank git
             & $GitPortable remote add origin $RepoURL #relink to repo
-            & $GitPortable fetch #fetch remote
-            & $GitPortable reset --hard HEAD #reset to remote HEAD branch (usually origin/master, but who the fuck knows with github changing shit)
         }
+        Write-Host "Fetching latest repo"
+        & $GitPortable fetch #fetch remote
+        & $GitPortable reset --hard HEAD #reset to remote HEAD branch (usually origin/master, but who the fuck knows with github changing shit)
         & $GitPortable restore * #Restore modified and missing files
         #search for extra files/folders and delete them
         $RepoStatus = & $GitPortable status #get status
